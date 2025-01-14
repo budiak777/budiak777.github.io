@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Глобус Земли</title>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+
+        const createScene = () => {
+            const scene = new BABYLON.Scene(engine);
+
+            // Камера
+            const camera = new BABYLON.ArcRotateCamera(
+                "Camera",
+                Math.PI / 2,
+                Math.PI / 2.5,
+                5,
+                BABYLON.Vector3.Zero(),
+                scene
+            );
+            camera.attachControl(canvas, true);
+
+            // Свет
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 1), scene);
+
+            // Фон: звездное небо
+            const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 1000 }, scene);
+            const skyboxMaterial = new BABYLON.StandardMaterial("skyBoxMaterial", scene);
+            skyboxMaterial.backFaceCulling = false;
+            skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture(
+                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6EIACFNp-RkVIwtLhBF3S2-7Mv-3VQJzyfw&s", // URL текстуры неба
+                scene
+            );
+            skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+            skyboxMaterial.disableLighting = true;
+            skybox.material = skyboxMaterial;
+
+
+
+
+            // Глобус Земли (сфера)
+            const earth = BABYLON.MeshBuilder.CreateSphere("earth", { segments: 64, diameter: 2 }, scene);
+            const earthMaterial = new BABYLON.StandardMaterial("earthMaterial", scene);
+
+            // Загрузка текстуры
+            const texture = new BABYLON.Texture("земля.jpg", scene, false, false, BABYLON.Texture.TRILINEAR_SAMPLINGMODE,
+                () => {
+                    // Этот код выполнится, когда текстура будет загружена
+                    earthMaterial.diffuseTexture = texture;
+
+                    // Исправляем зеркальное отображение
+                    earthMaterial.diffuseTexture.uScale = -1; // Перевернуть по горизонтали
+                    //  earthMaterial.diffuseTexture.vScale = -1; // Перевернуть по вертикали
+
+                    earth.material = earthMaterial;
+                    console.log("Текстура успешно загружена и применена.");
+                },
+                (message, exception) => {
+                    // Если текстура не загрузилась, будет выведено сообщение об ошибке
+                    console.error("Ошибка загрузки текстуры:", message, exception);
+                }
+            );
+
+            // Анимация вращения
+            scene.registerBeforeRender(() => {
+                earth.rotation.y += -0.01; // Вращение Земли
+            });
+
+            return scene;
+        };
+
+        const scene = createScene();
+
+        engine.runRenderLoop(() => {
+            scene.render();
+        });
+
+        window.addEventListener("resize", () => {
+            engine.resize();
+        });
+
+
+
+
+    </script>
+</body>
+
+</html>
